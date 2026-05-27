@@ -32,6 +32,16 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.local.example
+
+# local agent data
+.agents/
+.claude/
+.playwright-mcp/
+skills-lock.json
+
+# logs
+*.log
 
 # vercel
 .vercel
