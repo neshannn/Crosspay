@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, CreditCard, Banknote, Loader2 } from 'lucide-react';
 import { Service } from '@/lib/types';
 import { createOrder } from '@/lib/actions';
+import { useToast } from '../ui/Toast';
 
 interface OrderModalProps {
   service: Service | null;
@@ -13,8 +14,9 @@ interface OrderModalProps {
 
 export default function OrderModal({ service, onClose }: OrderModalProps) {
   const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<'eSewa' | 'Khalti'>('eSewa');
+  const [paymentMethod, setPaymentMethod] = useState<'eSewa' | 'Stripe'>('eSewa');
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   if (!service) return null;
 
@@ -22,14 +24,14 @@ export default function OrderModal({ service, onClose }: OrderModalProps) {
     setLoading(true);
     try {
       const result = await createOrder(service.id, service.price, quantity, paymentMethod);
-      
+
       if (result.success) {
         if (paymentMethod === 'eSewa' && result.paymentParams) {
           // ... (existing eSewa logic)
           const form = document.createElement('form');
           form.method = 'POST';
           form.action = result.paymentUrl!;
-          
+
           Object.entries(result.paymentParams).forEach(([key, value]) => {
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -37,21 +39,21 @@ export default function OrderModal({ service, onClose }: OrderModalProps) {
             input.value = value.toString();
             form.appendChild(input);
           });
-          
+
           document.body.appendChild(form);
           form.submit();
-        } else if (paymentMethod === 'Khalti' && result.paymentUrl) {
-          // Redirect to Khalti payment page
+        } else if (paymentMethod === 'Stripe' && result.paymentUrl) {
           window.location.href = result.paymentUrl;
         } else {
-          alert(result.message || 'Order placed successfully!');
+          showToast(result.message || 'Order placed successfully!', 'success');
           onClose();
         }
       } else {
-        alert(result.error || 'Failed to place order');
+        showToast(result.error || 'Failed to place order', 'error');
       }
+
     } catch (error) {
-      alert('An error occurred. Please try again.');
+      showToast('An error occurred. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -125,16 +127,19 @@ export default function OrderModal({ service, onClose }: OrderModalProps) {
                   }`}
                 >
                   <CreditCard size={24} />
-                  <span className="font-black text-xs uppercase">eSewa</span>
+                  <span className="font-black text-[10px] uppercase">eSewa</span>
                 </button>
                 <button
-                  onClick={() => setPaymentMethod('Khalti')}
+                  onClick={() => setPaymentMethod('Stripe')}
                   className={`flex flex-col items-center gap-2 p-4 border-[3px] border-black transition-all ${
-                    paymentMethod === 'Khalti' ? 'bg-brutalist-cyan shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'
+                    paymentMethod === 'Stripe' ? 'bg-brutalist-cyan shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'
                   }`}
                 >
-                  <div className="w-6 h-6 bg-[#5C2D91] rounded-full flex items-center justify-center text-white text-[10px] font-bold">K</div>
-                  <span className="font-black text-xs uppercase">Khalti</span>
+                  <Banknote size={24} />
+                  <div className="text-center">
+                    <p className="font-black text-[10px] uppercase leading-none">Stripe</p>
+                    <p className="text-[8px] font-bold opacity-60 uppercase">(Sandbox)</p>
+                  </div>
                 </button>
               </div>
             </div>
@@ -152,7 +157,7 @@ export default function OrderModal({ service, onClose }: OrderModalProps) {
                 className="brutalist-button bg-black text-white px-6 py-3 font-black uppercase flex items-center gap-2 disabled:opacity-50"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : null}
-                {paymentMethod === 'eSewa' || paymentMethod === 'Khalti' ? 'Pay Now' : 'Place Order'}
+                {paymentMethod === 'eSewa' ? 'Pay Now' : 'Place Order'}
               </button>
             </div>
           </div>

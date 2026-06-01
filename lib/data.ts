@@ -1,8 +1,8 @@
 import { cache } from 'react'
 import { db } from './db'
-import { services as servicesTable, orders as ordersTable, user as userTable } from './db/schema'
+import { services as servicesTable, orders as ordersTable, user as userTable, orderItems } from './db/schema'
 import { Feature, PricingPlan, Testimonial, Service, Order, SalesStats } from './types'
-import { desc, eq, sql } from 'drizzle-orm'
+import { desc, eq, sql, inArray } from 'drizzle-orm'
 
 export const getFeatures = cache(async (): Promise<Feature[]> => {
   return [
@@ -194,10 +194,28 @@ export const getOrders = cache(async (): Promise<Order[]> => {
     .leftJoin(servicesTable, eq(ordersTable.serviceId, servicesTable.id))
     .orderBy(desc(ordersTable.createdAt));
 
-    return dbOrders.map(o => ({
-      ...o,
-      amount: Number(o.amount),
+    const ordersWithItems = await Promise.all(dbOrders.map(async (o) => {
+      if (!o.serviceId) {
+        const items = await db.select({
+          name: servicesTable.name
+        })
+        .from(orderItems)
+        .innerJoin(servicesTable, eq(orderItems.serviceId, servicesTable.id))
+        .where(eq(orderItems.orderId, o.id));
+        
+        return {
+          ...o,
+          serviceName: items.map(i => i.name).join(", "),
+          amount: Number(o.amount),
+        };
+      }
+      return {
+        ...o,
+        amount: Number(o.amount),
+      };
     }));
+
+    return ordersWithItems;
   } catch (error) {
     console.error("Failed to fetch orders:", error);
     return [];
@@ -215,6 +233,8 @@ export const getSalesStats = cache(async (): Promise<SalesStats> => {
     const revenueByService: { [key: string]: { revenue: number, count: number } } = {};
     
     orders.forEach(o => {
+      // Split serviceName for bulk orders to count correctly? 
+      // For simplicity, we'll just use the full string as a "Package" or just use the first one.
       const sName = o.serviceName || 'Unknown';
       if (!revenueByService[sName]) {
         revenueByService[sName] = { revenue: 0, count: 0 };
@@ -265,10 +285,28 @@ export const getUserOrders = cache(async (userId: string): Promise<Order[]> => {
     .where(eq(ordersTable.userId, userId))
     .orderBy(desc(ordersTable.createdAt));
 
-    return dbOrders.map(o => ({
-      ...o,
-      amount: Number(o.amount),
+    const ordersWithItems = await Promise.all(dbOrders.map(async (o) => {
+      if (!o.serviceId) {
+        const items = await db.select({
+          name: servicesTable.name
+        })
+        .from(orderItems)
+        .innerJoin(servicesTable, eq(orderItems.serviceId, servicesTable.id))
+        .where(eq(orderItems.orderId, o.id));
+        
+        return {
+          ...o,
+          serviceName: items.map(i => i.name).join(", "),
+          amount: Number(o.amount),
+        };
+      }
+      return {
+        ...o,
+        amount: Number(o.amount),
+      };
     }));
+
+    return ordersWithItems;
   } catch (error) {
     console.error("Failed to fetch user orders:", error);
     return [];

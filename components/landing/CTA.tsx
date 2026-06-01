@@ -1,10 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles, LayoutDashboard } from 'lucide-react'
 import Link from 'next/link'
+import { authClient } from '@/lib/auth-client'
 
 export function CTA() {
+  const { data: session } = authClient.useSession()
   return (
     <section className="py-24 bg-white border-t-[3px] border-black overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,12 +41,21 @@ export function CTA() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link 
-              href="/signup" 
-              className="brutalist-button bg-black text-white text-2xl px-12 py-6 w-full sm:w-auto text-center"
-            >
-              GET STARTED NOW <ArrowRight className="inline-block ml-2 w-8 h-8" />
-            </Link>
+            {session ? (
+              <Link 
+                href="/dashboard" 
+                className="brutalist-button bg-black text-white text-2xl px-12 py-6 w-full sm:w-auto text-center flex items-center justify-center gap-3"
+              >
+                GO TO DASHBOARD <LayoutDashboard className="w-8 h-8" />
+              </Link>
+            ) : (
+              <Link 
+                href="/signup" 
+                className="brutalist-button bg-black text-white text-2xl px-12 py-6 w-full sm:w-auto text-center"
+              >
+                GET STARTED NOW <ArrowRight className="inline-block ml-2 w-8 h-8" />
+              </Link>
+            )}
             <button className="brutalist-button bg-white text-black text-2xl px-12 py-6 w-full sm:w-auto">
               CONTACT SALES
             </button>

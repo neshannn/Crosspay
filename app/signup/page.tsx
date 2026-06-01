@@ -61,7 +61,7 @@ export default function SignupPage() {
       name,
       // @ts-ignore
       role,
-      callbackURL: role === 'admin' ? '/admin/dashboard' : '/dashboard',
+      callbackURL: role === 'admin' ? '/admin/dashboard' : '/',
     }, {
       onRequest: () => {
         setIsPending(true)
@@ -74,7 +74,7 @@ export default function SignupPage() {
         setIsPending(false)
       },
       onSuccess: () => {
-        router.push(role === 'admin' ? '/admin/dashboard' : '/dashboard')
+        router.push(role === 'admin' ? '/admin/dashboard' : '/')
         router.refresh()
       }
     })

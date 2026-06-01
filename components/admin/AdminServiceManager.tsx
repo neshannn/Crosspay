@@ -5,6 +5,7 @@ import { Plus, Trash2, Edit, Save, X, Loader2, Package, Key } from 'lucide-react
 import { Service } from '@/lib/types';
 import { addService, updateService, deleteService, addDigitalKey, getDigitalKeys, deleteDigitalKey } from '@/lib/actions';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '../ui/Toast';
 
 interface AdminServiceManagerProps {
   initialServices: Service[];
@@ -20,6 +21,7 @@ export default function AdminServiceManager({ initialServices }: AdminServiceMan
   const [keyLoading, setKeyLoading] = useState(false);
   const [digitalKeys, setDigitalKeys] = useState<any[]>([]);
   const [newKey, setNewKey] = useState('');
+  const { showToast } = useToast();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -66,11 +68,11 @@ export default function AdminServiceManager({ initialServices }: AdminServiceMan
       if (result.success) {
         setDigitalKeys(result.keys || []);
       } else {
-        alert(result.error || "Failed to fetch keys");
+        showToast(result.error || "Failed to fetch keys", "error");
       }
     } catch (error) {
       console.error(error);
-      alert("Something went wrong while fetching keys");
+      showToast("Something went wrong while fetching keys", "error");
     } finally {
       setKeyLoading(false);
     }
@@ -86,11 +88,12 @@ export default function AdminServiceManager({ initialServices }: AdminServiceMan
         setNewKey('');
         const refresh = await getDigitalKeys(selectedService.id);
         setDigitalKeys(refresh.keys || []);
+        showToast("Digital key added successfully", "success");
       } else {
-        alert(result.error || "Failed to add key");
+        showToast(result.error || "Failed to add key", "error");
       }
     } catch (error) {
-      alert("Failed to add key due to a network or server error");
+      showToast("Failed to add key due to a network or server error", "error");
     } finally {
       setKeyLoading(false);
     }
@@ -104,9 +107,10 @@ export default function AdminServiceManager({ initialServices }: AdminServiceMan
       if (result.success) {
         const refresh = await getDigitalKeys(selectedService.id);
         setDigitalKeys(refresh.keys || []);
+        showToast("Key deleted", "success");
       }
     } catch (error) {
-      alert("Failed to delete key");
+      showToast("Failed to delete key", "error");
     } finally {
       setKeyLoading(false);
     }
@@ -121,21 +125,23 @@ export default function AdminServiceManager({ initialServices }: AdminServiceMan
         const result = await updateService(editingService.id, formData);
         if (result.success) {
           setIsModalOpen(false);
+          showToast("Service updated successfully", "success");
           window.location.reload();
         } else {
-          alert(result.error);
+          showToast(result.error || "Update failed", "error");
         }
       } else {
         const result = await addService(formData);
         if (result.success) {
           setIsModalOpen(false);
+          showToast("Service created successfully", "success");
           window.location.reload();
         } else {
-          alert(result.error);
+          showToast(result.error || "Creation failed", "error");
         }
       }
     } catch (error) {
-      alert("Something went wrong");
+      showToast("Something went wrong", "error");
     } finally {
       setLoading(false);
     }
@@ -148,12 +154,13 @@ export default function AdminServiceManager({ initialServices }: AdminServiceMan
     try {
       const result = await deleteService(id);
       if (result.success) {
+        showToast("Service deleted", "success");
         window.location.reload();
       } else {
-        alert(result.error);
+        showToast(result.error || "Deletion failed", "error");
       }
     } catch (error) {
-      alert("Failed to delete service");
+      showToast("Failed to delete service", "error");
     } finally {
       setLoading(false);
     }

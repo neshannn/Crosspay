@@ -1,10 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Play, CreditCard, Sparkles } from 'lucide-react'
+import { Play, CreditCard, Sparkles, LayoutDashboard } from 'lucide-react'
 import Link from 'next/link'
+import { authClient } from '@/lib/auth-client'
 
 export function Hero() {
+  const { data: session } = authClient.useSession()
+
   return (
     <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
       {/* Background Decorative Elements */}
@@ -38,12 +41,22 @@ export function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start items-center">
-              <Link 
-                href="/signup" 
-                className="brutalist-button bg-black text-white text-xl px-10 py-5 text-center"
-              >
-                Start Free Trial
-              </Link>
+              {session ? (
+                <Link 
+                  href="/dashboard" 
+                  className="brutalist-button bg-black text-white text-xl px-10 py-5 text-center flex items-center gap-3"
+                >
+                  <LayoutDashboard />
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <Link 
+                  href="/signup" 
+                  className="brutalist-button bg-black text-white text-xl px-10 py-5 text-center"
+                >
+                  Start Free Trial
+                </Link>
+              )}
               <button className="brutalist-button bg-white text-black text-xl px-10 py-5 flex items-center gap-2">
                 <Play className="fill-current" /> Watch Demo
               </button>
@@ -105,10 +118,10 @@ export function Hero() {
                         </div>
                       </div>
                       <Link 
-                        href="/signup"
+                        href={session ? "/dashboard" : "/signup"}
                         className="bg-white border-2 border-black px-3 py-1 text-[10px] font-black uppercase hover:bg-black hover:text-white transition-colors"
                       >
-                        Select
+                        {session ? "Buy Now" : "Select"}
                       </Link>
                     </motion.div>
                   ))}

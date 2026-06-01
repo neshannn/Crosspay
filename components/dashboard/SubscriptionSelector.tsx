@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Plus } from 'lucide-react';
 import { Service } from '@/lib/types';
 import OrderModal from './OrderModal';
+import { useCart } from './CartContext';
 
 interface SubscriptionSelectorProps {
   services: Service[];
@@ -12,6 +13,7 @@ interface SubscriptionSelectorProps {
 
 export default function SubscriptionSelector({ services }: SubscriptionSelectorProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const { addItem } = useCart();
 
   return (
     <div className="space-y-8">
@@ -44,30 +46,47 @@ export default function SubscriptionSelector({ services }: SubscriptionSelectorP
                 {service.description}
               </p>
               
-              <div className="mt-auto pt-6 border-t-[2px] border-black flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase opacity-50">
-                    {service.stock <= 0 ? 'STATUS' : 'Price'}
-                  </span>
-                  <span className={`text-xl font-black ${service.stock <= 0 ? 'text-red-600' : ''}`}>
-                    {service.stock <= 0 ? 'OUT OF STOCK' : `NPR ${service.price}`}
-                  </span>
+              <div className="mt-auto pt-6 border-t-[2px] border-black space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase opacity-50">
+                      {service.stock <= 0 ? 'STATUS' : 'Price'}
+                    </span>
+                    <span className={`text-xl font-black ${service.stock <= 0 ? 'text-red-600' : ''}`}>
+                      {service.stock <= 0 ? 'OUT OF STOCK' : `NPR ${service.price}`}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedService(service)}
+                    disabled={service.stock <= 0}
+                    className={`
+                      flex items-center gap-2 px-3 py-1 font-black uppercase text-[10px] border-[2px] border-black 
+                      transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none
+                      ${service.stock <= 0 
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-400' 
+                        : 'bg-white hover:bg-brutalist-yellow shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                      }
+                    `}
+                  >
+                    Direct Order
+                  </button>
                 </div>
                 
                 <button
-                  onClick={() => setSelectedService(service)}
+                  onClick={() => addItem(service)}
                   disabled={service.stock <= 0}
                   className={`
-                    flex items-center gap-2 px-4 py-2 font-black uppercase text-sm border-[2px] border-black 
+                    w-full flex items-center justify-center gap-2 px-4 py-2 font-black uppercase text-sm border-[2px] border-black 
                     transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none
                     ${service.stock <= 0 
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-400' 
-                      : 'bg-brutalist-magenta text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px]'
+                      : 'bg-brutalist-magenta text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px]'
                     }
                   `}
                 >
-                  <ShoppingCart size={18} />
-                  {service.stock <= 0 ? 'SOLD OUT' : 'ORDER NOW'}
+                  <Plus size={18} />
+                  {service.stock <= 0 ? 'SOLD OUT' : 'ADD TO CART'}
                 </button>
               </div>
             </motion.div>

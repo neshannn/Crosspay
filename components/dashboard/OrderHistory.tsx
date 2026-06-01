@@ -4,7 +4,8 @@ import { Order } from '@/lib/types';
 import { motion } from 'framer-motion';
 import { Calendar, ShoppingBag, CreditCard, ChevronDown, ChevronUp, ExternalLink, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { getEsewaPaymentParams, getKhaltiPaymentUrl } from '@/lib/actions';
+import { getEsewaPaymentParams, getStripeCheckoutUrl, cancelOrder } from '@/lib/actions';
+import { useToast } from '../ui/Toast';
 
 interface OrderHistoryProps {
   orders: Order[];
@@ -13,20 +14,40 @@ interface OrderHistoryProps {
 export default function OrderHistory({ orders }: OrderHistoryProps) {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const toggleOrder = (id: string) => {
     setExpandedOrder(expandedOrder === id ? null : id);
   };
 
-  const handlePayNow = async (order: Order) => {
-    setLoadingOrderId(order.id);
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm("Are you sure you want to cancel this order? This will release the reserved stock.")) return;
+    
+    setCancellingOrderId(orderId);
     try {
-      if (order.paymentMethod === 'Khalti') {
-        const result = await getKhaltiPaymentUrl(order.id);
+      const result = await cancelOrder(orderId);
+      if (result.success) {
+        showToast(result.message || 'Order cancelled successfully', 'success');
+      } else {
+        showToast(result.error || 'Failed to cancel order', 'error');
+      }
+    } catch (error) {
+      showToast('Something went wrong. Please try again.', 'error');
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
+  const handlePayNow = async (order: Order, method: 'eSewa' | 'Stripe') => {
+    setLoadingOrderId(`${order.id}-${method}`);
+    try {
+      if (method === 'Stripe') {
+        const result = await getStripeCheckoutUrl(order.id);
         if (result.success && result.paymentUrl) {
           window.location.href = result.paymentUrl;
         } else {
-          alert(result.error || 'Failed to initiate Khalti payment');
+          showToast(result.error || 'Failed to initiate Stripe payment', 'error');
         }
       } else {
         const result = await getEsewaPaymentParams(order.id);
@@ -46,11 +67,11 @@ export default function OrderHistory({ orders }: OrderHistoryProps) {
           document.body.appendChild(form);
           form.submit();
         } else {
-          alert(result.error || 'Failed to initiate eSewa payment');
+          showToast(result.error || 'Failed to initiate eSewa payment', 'error');
         }
       }
     } catch (error) {
-      alert('Something went wrong. Please try again.');
+      showToast('Something went wrong. Please try again.', 'error');
     } finally {
       setLoadingOrderId(null);
     }
@@ -137,17 +158,40 @@ export default function OrderHistory({ orders }: OrderHistoryProps) {
                       </div>
                     ) : (order.status === 'awaiting_payment' || order.status === 'pending') ? (
                       <div className="space-y-3">
-                        <p className="text-[10px] font-bold opacity-70 uppercase">Payment is pending for this order.</p>
+                        <p className="text-[10px] font-bold opacity-70 uppercase">Payment is pending. Choose a method to complete your order:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePayNow(order, 'eSewa');
+                            }}
+                            disabled={!!loadingOrderId}
+                            className="brutalist-button bg-brutalist-green text-black py-2 text-[10px] font-black uppercase flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {loadingOrderId === `${order.id}-eSewa` ? <Loader2 className="animate-spin" size={12} /> : <CreditCard size={12} />}
+                            eSewa
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePayNow(order, 'Stripe');
+                            }}
+                            disabled={!!loadingOrderId || !!cancellingOrderId}
+                            className="brutalist-button bg-brutalist-cyan text-black py-2 text-[10px] font-black uppercase flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {loadingOrderId === `${order.id}-Stripe` ? <Loader2 className="animate-spin" size={12} /> : <ExternalLink size={12} />}
+                            Stripe
+                          </button>
+                        </div>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handlePayNow(order);
+                            handleCancelOrder(order.id);
                           }}
-                          disabled={loadingOrderId === order.id}
-                          className="w-full brutalist-button bg-brutalist-cyan text-black py-2 text-xs font-black uppercase flex items-center justify-center gap-2"
+                          disabled={!!loadingOrderId || !!cancellingOrderId}
+                          className="w-full mt-2 border-[2px] border-black py-2 text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
                         >
-                          {loadingOrderId === order.id ? <Loader2 className="animate-spin" size={14} /> : <CreditCard size={14} />}
-                          Pay with {order.paymentMethod || 'eSewa'}
+                          {cancellingOrderId === order.id ? <Loader2 className="animate-spin mx-auto" size={12} /> : 'Cancel Order'}
                         </button>
                       </div>
                     ) : (

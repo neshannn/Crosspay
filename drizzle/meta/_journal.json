@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1779890152870,
+      "tag": "0000_add_khalti_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1780288793221,
+      "tag": "0001_glossy_fantastic_four",
+      "breakpoints": true
+    }
+  ]
+}

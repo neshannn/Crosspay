@@ -6,8 +6,8 @@ export default async function middleware(request: NextRequest) {
         headers: request.headers,
     });
 
-    // Redirect authenticated users away from auth pages and home page to dashboard
-    if (session && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup' || request.nextUrl.pathname === '/')) {
+    // Redirect authenticated users away from auth pages to dashboard
+    if (session && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 

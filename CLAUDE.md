@@ -126,7 +126,7 @@ CURRENCY=NPR
 
 ## Regional Considerations
 - **Nepali language support** (unicode, fonts)
-- **Local payment methods** (eSewa, Khalti)
+- **Local payment methods** (eSewa)
 - **Tax compliance** (VAT rules for Nepal)
 - **Local regulations** (data residency)
 - **Currency display** (NPR formatting)

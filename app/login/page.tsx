@@ -36,7 +36,7 @@ export default function LoginPage() {
     await authClient.signIn.email({
       email,
       password,
-      callbackURL: role === 'admin' ? '/admin/dashboard' : '/dashboard',
+      callbackURL: role === 'admin' ? '/admin/dashboard' : '/',
     }, {
       onRequest: () => {
         setIsPending(true)
@@ -49,7 +49,7 @@ export default function LoginPage() {
         setIsPending(false)
       },
       onSuccess: () => {
-        router.push(role === 'admin' ? '/admin/dashboard' : '/dashboard')
+        router.push(role === 'admin' ? '/admin/dashboard' : '/')
         router.refresh()
       }
     })

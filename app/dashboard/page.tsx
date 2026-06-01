@@ -1,16 +1,26 @@
 import { auth } from "@/lib/auth";
-import { logout } from "@/lib/actions";
-import { LogOut, User, Shield, CreditCard, Package, ShoppingBag } from "lucide-react";
+import { LogOut, User, Shield, CreditCard, Package, ShoppingBag, Home as HomeIcon } from "lucide-react";
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { getServices, getUserOrders } from "@/lib/data";
 import SubscriptionSelector from "@/components/dashboard/SubscriptionSelector";
 import OrderHistory from "@/components/dashboard/OrderHistory";
+import PaymentStatusHandler from "@/components/dashboard/PaymentStatusHandler";
+import ProfileDropdown from "@/components/dashboard/ProfileDropdown";
+import Link from "next/link";
+import { CartProvider } from "@/components/dashboard/CartContext";
+import { ToastProvider } from "@/components/ui/Toast";
+import CartSidebar from "@/components/dashboard/CartSidebar";
+import CartButton from "@/components/dashboard/CartButton";
 
 export default function DashboardPage() {
   return (
     <Suspense fallback={<DashboardLoading />}>
-      <DashboardContent />
+      <CartProvider>
+        <DashboardContent />
+        <CartSidebar />
+      </CartProvider>
     </Suspense>
   );
 }
@@ -31,7 +41,11 @@ async function DashboardContent() {
   });
 
   if (!session) {
-    return null;
+    redirect("/login");
+  }
+
+  if (session.user.role === 'admin') {
+    redirect("/admin/dashboard");
   }
 
   const { user } = session;
@@ -43,29 +57,28 @@ async function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-brutalist-yellow">
+      <Suspense>
+        <PaymentStatusHandler />
+      </Suspense>
       <nav className="bg-white border-b-[3px] border-black sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-black border-[2px] border-black flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 bg-black border-[2px] border-black flex items-center justify-center group-hover:bg-brutalist-magenta transition-colors">
                 <span className="text-white font-black text-sm">CP</span>
               </div>
-              <span className="font-black text-lg">CROSSPAY</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2 text-sm font-bold">
-                <User size={16} />
-                <span>{user.email}</span>
-              </div>
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="brutalist-button bg-brutalist-magenta text-white flex items-center gap-2 px-4 py-2 text-sm"
-                >
-                  <LogOut size={16} />
-                  LOGOUT
-                </button>
-              </form>
+              <span className="font-black text-lg group-hover:underline decoration-[2px] decoration-brutalist-magenta underline-offset-4">CROSSPAY</span>
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link 
+                href="/" 
+                className="flex items-center gap-2 font-bold uppercase text-[10px] sm:text-xs hover:underline decoration-[2px] decoration-brutalist-yellow underline-offset-4"
+              >
+                <HomeIcon size={16} />
+                Home
+              </Link>
+              <CartButton />
+              <ProfileDropdown user={user} />
             </div>
           </div>
         </div>
@@ -144,6 +157,15 @@ async function DashboardContent() {
           <div className="space-y-8">
             <div className="brutalist-card bg-white p-8 border-[3px] border-black">
               <h2 className="text-2xl font-black mb-6 uppercase tracking-tighter border-b-[3px] border-black pb-2">Profile</h2>
+              <div className="flex justify-center mb-6">
+                <div className="w-24 h-24 border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-brutalist-yellow overflow-hidden flex items-center justify-center">
+                  {user.image ? (
+                    <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={48} />
+                  )}
+                </div>
+              </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-2 border-b-[2px] border-black/10">
                   <span className="font-bold uppercase text-[10px] opacity-40">Email</span>

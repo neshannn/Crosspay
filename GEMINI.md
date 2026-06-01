@@ -23,9 +23,8 @@ CrossPay is a digital marketplace enabling users in Nepal to access global subsc
 ## Core Features
 ### 1. Marketplace & Ordering
 - **Subscription Services**: Managed via the `services` table. Supports pricing, icons, categories, and stock limits.
-- **Ordering System**: Users can select quantity and payment method (eSewa/Khalti).
+- **Ordering System**: Users can select quantity and payment method (eSewa).
 - **eSewa Integration**: Uses ePay v2 protocol with HMAC-SHA256 signing. Test secret: `8gBm/:&EnhH.1/q`.
-- **Khalti Integration**: Uses Khalti v2 API for digital payments. Test secret: `key 496660f6430a471694f2756d11f016d2`.
 - **Stock Management**: Orders automatically decrement stock. UI displays "OUT OF STOCK" when limit reaches 0.
 
 ### 2. Admin Dashboard (`/admin/dashboard`)

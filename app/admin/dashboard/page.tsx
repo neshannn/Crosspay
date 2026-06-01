@@ -8,6 +8,7 @@ import { getServices, getOrders, getSalesStats } from "@/lib/data";
 import AdminServiceManager from "@/components/admin/AdminServiceManager";
 import AdminOrderReport from "@/components/admin/AdminOrderReport";
 import AdminDashboardTabs from "@/components/admin/AdminDashboardTabs";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export default function AdminDashboardPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   return (
@@ -36,7 +37,7 @@ async function AdminDashboardContent({ searchParams }: { searchParams: Promise<{
   });
 
   if (!session || session.user.role !== 'admin') {
-    redirect("/login");
+    redirect("/dashboard");
   }
 
   const services = await getServices();
