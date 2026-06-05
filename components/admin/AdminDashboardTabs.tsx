@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingBag, BarChart3, Users } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag } from 'lucide-react';
 
 interface AdminDashboardTabsProps {
   activeTab: string;
@@ -23,14 +23,6 @@ export default function AdminDashboardTabs({ activeTab }: AdminDashboardTabsProp
         icon={<ShoppingBag size={18} />}
         label="Orders & Sales"
         color="bg-brutalist-yellow"
-      />
-      <TabLink 
-        href="#" 
-        active={activeTab === 'users'} 
-        icon={<Users size={18} />}
-        label="Users"
-        color="bg-brutalist-green"
-        disabled
       />
     </div>
   );

@@ -40,7 +40,7 @@ async function AdminDashboardContent({ searchParams }: { searchParams: Promise<{
     redirect("/dashboard");
   }
 
-  const services = await getServices();
+  const services = await getServices(true);
   const orders = await getOrders();
   const stats = await getSalesStats();
 
@@ -58,9 +58,15 @@ async function AdminDashboardContent({ searchParams }: { searchParams: Promise<{
             </div>
             <div className="flex items-center gap-6">
               <div className="hidden md:flex items-center gap-2 text-xs font-black uppercase">
-                <span className="w-2 h-2 bg-brutalist-green rounded-full"></span>
+                <span className="w-2 h-2 bg-brutalist-green rounded-full animate-pulse"></span>
                 System Status: Optimal
               </div>
+              <a 
+                href="/"
+                className="brutalist-button bg-white text-black flex items-center gap-2 px-4 py-2 text-xs font-black uppercase border-[2px] border-black hover:bg-brutalist-yellow"
+              >
+                Storefront
+              </a>
               <form action={logout}>
                 <button
                   type="submit"
@@ -76,24 +82,28 @@ async function AdminDashboardContent({ searchParams }: { searchParams: Promise<{
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-          <div>
-            <h1 className="text-5xl font-black tracking-tighter uppercase mb-2 leading-none">
-              {activeTab === 'services' ? 'Marketplace' : 'Sales'} <span className="text-brutalist-magenta">{activeTab === 'services' ? 'Control' : 'Analytics'}</span>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-12">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase text-gray-400 mb-2">
+              <BarChart3 size={12} />
+              Last updated: {new Date().toLocaleTimeString()}
+            </div>
+            <h1 className="text-6xl md:text-7xl font-black tracking-tighter uppercase mb-4 leading-none">
+              Admin <span className="text-brutalist-magenta">Dashboard</span>
             </h1>
-            <p className="text-lg font-bold opacity-70">
-              {activeTab === 'services' ? 'Manage subscriptions, pricing, and availability.' : 'Track orders, revenue, and customer activity.'}
+            <p className="text-xl font-bold opacity-70 max-w-2xl">
+              Control center for CrossPay. Manage your digital inventory and track every transaction with neo-brutalist precision.
             </p>
           </div>
           
-          <div className="flex gap-4">
-            <div className="brutalist-card bg-brutalist-cyan p-4 border-[3px] border-black flex flex-col items-center min-w-[120px]">
-              <span className="text-3xl font-black">{services.length}</span>
-              <span className="text-[10px] font-black uppercase">Total Services</span>
+          <div className="grid grid-cols-2 gap-4 w-full lg:w-auto">
+            <div className="brutalist-card bg-brutalist-cyan p-6 border-[3px] border-black flex flex-col shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-4xl font-black">{services.length}</span>
+              <span className="text-[10px] font-black uppercase">Services Active</span>
             </div>
-            <div className="brutalist-card bg-brutalist-yellow p-4 border-[3px] border-black flex flex-col items-center min-w-[120px]">
-              <span className="text-3xl font-black">{stats.totalOrders}</span>
-              <span className="text-[10px] font-black uppercase">Total Orders</span>
+            <div className="brutalist-card bg-brutalist-yellow p-6 border-[3px] border-black flex flex-col shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-4xl font-black">{stats.totalOrders}</span>
+              <span className="text-[10px] font-black uppercase">Total Sales</span>
             </div>
           </div>
         </div>

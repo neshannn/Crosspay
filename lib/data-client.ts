@@ -41,6 +41,7 @@ export const mockServices: Service[] = [
     description: '4K + HDR, 4 Screens at once. Global access.',
     icon: '🎬',
     category: 'Streaming',
+    stock: 10,
   },
   {
     id: 'spotify-1',
@@ -49,6 +50,7 @@ export const mockServices: Service[] = [
     description: '6 accounts, Ad-free music, Offline play.',
     icon: '🎵',
     category: 'Music',
+    stock: 25,
   },
   {
     id: 'youtube-1',
@@ -57,6 +59,7 @@ export const mockServices: Service[] = [
     description: 'Ad-free, Background play, YT Music.',
     icon: '📺',
     category: 'Entertainment',
+    stock: 50,
   },
   {
     id: 'canva-1',
@@ -65,6 +68,7 @@ export const mockServices: Service[] = [
     description: 'Premium templates, Brand kit, Background remover.',
     icon: '🎨',
     category: 'Design',
+    stock: 15,
   },
   {
     id: 'adobe-1',
@@ -73,6 +77,7 @@ export const mockServices: Service[] = [
     description: 'All 20+ Adobe apps, Cloud storage.',
     icon: '🖌️',
     category: 'Design',
+    stock: 5,
   },
   {
     id: 'chatgpt-1',
@@ -81,6 +86,7 @@ export const mockServices: Service[] = [
     description: 'Access to GPT-4, Faster response, Priority access.',
     icon: '🤖',
     category: 'AI',
+    stock: 20,
   },
 ]
 

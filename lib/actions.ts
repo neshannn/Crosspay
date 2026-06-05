@@ -7,13 +7,21 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { orders, services as servicesTable, digitalKeys as digitalKeysTable, cartItems, orderItems } from "@/lib/db/schema";
+import { orders as ordersTable, services as servicesTable, digitalKeys as digitalKeysTable, cartItems, orderItems } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import crypto from "crypto";
 
 import { stripe } from "@/lib/stripe";
 
-export const addService = async (data: { name: string, price: number, description: string, icon: string, category: string, stock: number }) => {
+export const addService = async (data: { 
+  name: string, 
+  price: number, 
+  description: string, 
+  icon: string, 
+  category: string, 
+  stock: number,
+  initialKeys?: string[]
+}) => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -23,15 +31,40 @@ export const addService = async (data: { name: string, price: number, descriptio
   }
 
   try {
-    await db.insert(servicesTable).values({
-      id: crypto.randomUUID(),
-      ...data,
-      price: data.price.toString(),
-      stock: data.stock.toString(),
-      active: true,
+    const serviceId = crypto.randomUUID();
+    const keysCount = data.initialKeys?.length || 0;
+
+    await db.transaction(async (tx) => {
+      // 1. Insert service
+      await tx.insert(servicesTable).values({
+        id: serviceId,
+        name: data.name,
+        price: data.price.toString(),
+        description: data.description,
+        icon: data.icon,
+        category: data.category,
+        stock: keysCount > 0 ? keysCount : data.stock, // Prefer keys count if provided
+        active: true,
+      });
+
+      // 2. Insert initial keys if any
+      if (data.initialKeys && data.initialKeys.length > 0) {
+        for (const key of data.initialKeys) {
+          if (key.trim()) {
+            await tx.insert(digitalKeysTable).values({
+              id: crypto.randomUUID(),
+              serviceId,
+              key: key.trim(),
+              createdAt: new Date(),
+            });
+          }
+        }
+      }
     });
+
     revalidatePath("/admin/dashboard");
     revalidatePath("/dashboard");
+    revalidatePath("/");
     return { success: true };
   } catch (error) {
     console.error("Add service error:", error);
@@ -53,7 +86,7 @@ export const updateService = async (id: string, data: { name: string, price: num
       .set({
         ...data,
         price: data.price.toString(),
-        stock: data.stock.toString(),
+        stock: data.stock,
       })
       .where(eq(servicesTable.id, id));
     
@@ -149,6 +182,31 @@ export const deleteDigitalKey = async (id: string, serviceId: string) => {
 };
 
 
+export const toggleServiceStatus = async (id: string, active: boolean) => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session || session.user.role !== 'admin') {
+    return { error: "Unauthorized" };
+  }
+
+  try {
+    await db.update(servicesTable)
+      .set({ active })
+      .where(eq(servicesTable.id, id));
+    
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/dashboard");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error("Toggle service status error:", error);
+    return { error: "Failed to update service status" };
+  }
+};
+
+
 export const deleteService = async (id: string) => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -159,15 +217,42 @@ export const deleteService = async (id: string) => {
   }
 
   try {
-    // Note: This might fail if there are orders referencing this service
-    // In a real app, you'd probably just deactivate it
-    await db.delete(servicesTable).where(eq(servicesTable.id, id));
+    // Soft delete: set active to false
+    await db.update(servicesTable)
+      .set({ active: false })
+      .where(eq(servicesTable.id, id));
+    
     revalidatePath("/admin/dashboard");
     revalidatePath("/dashboard");
-    return { success: true };
+    revalidatePath("/");
+    return { success: true, message: "Service disabled successfully" };
   } catch (error) {
     console.error("Delete service error:", error);
-    return { error: "Failed to delete service. It might be referenced by existing orders." };
+    return { error: "Failed to disable service." };
+  }
+};
+
+export const hardDeleteService = async (id: string) => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session || session.user.role !== 'admin') {
+    return { error: "Unauthorized" };
+  }
+
+  try {
+    // Hard delete: remove from database
+    // digitalKeys will be deleted via cascade
+    await db.delete(servicesTable).where(eq(servicesTable.id, id));
+    
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/dashboard");
+    revalidatePath("/");
+    return { success: true, message: "Service permanently deleted" };
+  } catch (error) {
+    console.error("Hard delete service error:", error);
+    return { error: "Failed to permanently delete service. It may be linked to existing orders." };
   }
 };
 
@@ -209,7 +294,7 @@ export const checkoutCart = async (paymentMethod: string) => {
 
     await db.transaction(async (tx) => {
       // Create the main order
-      await tx.insert(orders).values({
+      await tx.insert(ordersTable).values({
         id: orderId,
         userId: session.user.id,
         amount: totalAmount.toString(),
@@ -405,8 +490,8 @@ export const cancelOrder = async (orderId: string) => {
 
   try {
     const order = await db.select()
-      .from(orders)
-      .where(eq(orders.id, orderId))
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId))
       .limit(1);
 
     if (!order.length) {
@@ -424,9 +509,9 @@ export const cancelOrder = async (orderId: string) => {
 
     await db.transaction(async (tx) => {
       // 1. Update order status
-      await tx.update(orders)
+      await tx.update(ordersTable)
         .set({ status: 'cancelled' })
-        .where(eq(orders.id, orderId));
+        .where(eq(ordersTable.id, orderId));
 
       // 2. Revert stock
       // Get all items associated with this order
@@ -577,7 +662,7 @@ export const createOrder = async (serviceId: string, amount: number, quantity: n
     // Create the order and decrement stock
     try {
       await db.transaction(async (tx) => {
-        await tx.insert(orders).values({
+        await tx.insert(ordersTable).values({
           id: orderId,
           userId: session.user.id,
           serviceId: serviceId,
@@ -688,7 +773,7 @@ export const getEsewaPaymentParams = async (orderId: string) => {
   }
 
   try {
-    const order = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    const order = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId)).limit(1);
     
     if (!order.length) {
       return { error: "Order not found" };

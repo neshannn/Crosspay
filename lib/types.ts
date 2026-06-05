@@ -27,19 +27,20 @@ export interface Service {
   icon: string;
   category: string;
   stock: number;
+  active?: boolean;
   digitalKey?: string;
 }
 
 export interface Order {
   id: string;
   userId: string;
-  userName?: string;
-  userEmail?: string;
-  serviceId: string;
-  serviceName?: string;
+  userName?: string | null;
+  userEmail?: string | null;
+  serviceId: string | null;
+  serviceName?: string | null;
   status: string;
   amount: number;
-  paymentMethod?: string;
+  paymentMethod?: string | null;
   createdAt: Date;
 }
 

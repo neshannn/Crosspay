@@ -39,9 +39,17 @@ export const getFeatures = cache(async (): Promise<Feature[]> => {
   ]
 })
 
-export const getServices = cache(async (): Promise<Service[]> => {
+export const getServices = cache(async (includeInactive = false): Promise<Service[]> => {
   try {
-    const dbServices = await db.select().from(servicesTable);
+    let query = db.select().from(servicesTable);
+    
+    // Only filter by active if not explicitly requested (e.g. for admin)
+    if (!includeInactive) {
+      // @ts-ignore - drizzle-orm type safety with dynamic where
+      query = query.where(eq(servicesTable.active, true));
+    }
+
+    const dbServices = await query;
     if (dbServices.length > 0) {
       return dbServices.map(s => ({
         id: s.id,
@@ -51,6 +59,7 @@ export const getServices = cache(async (): Promise<Service[]> => {
         icon: s.icon || '📦',
         category: s.category || 'General',
         stock: Number(s.stock ?? 100),
+        active: !!s.active,
       }));
     }
   } catch (error) {
@@ -65,47 +74,59 @@ export const getServices = cache(async (): Promise<Service[]> => {
       description: '4K + HDR, 4 Screens at once. Global access.',
       icon: '🎬',
       category: 'Streaming',
-    },
-    {
+      stock: 10,
+      active: true,
+      },
+      {
       id: 'spotify-1',
       name: 'Spotify Family',
       price: 500,
       description: '6 accounts, Ad-free music, Offline play.',
       icon: '🎵',
       category: 'Music',
-    },
-    {
+      stock: 25,
+      active: true,
+      },
+      {
       id: 'youtube-1',
       name: 'YouTube Premium',
       price: 300,
       description: 'Ad-free, Background play, YT Music.',
       icon: '📺',
       category: 'Entertainment',
-    },
-    {
+      stock: 50,
+      active: true,
+      },
+      {
       id: 'canva-1',
       name: 'Canva Pro',
       price: 800,
       description: 'Premium templates, Brand kit, Background remover.',
       icon: '🎨',
       category: 'Design',
-    },
-    {
+      stock: 15,
+      active: true,
+      },
+      {
       id: 'adobe-1',
       name: 'Adobe Creative Cloud',
       price: 4500,
       description: 'All 20+ Adobe apps, Cloud storage.',
       icon: '🖌️',
       category: 'Design',
-    },
-    {
+      stock: 5,
+      active: true,
+      },
+      {
       id: 'chatgpt-1',
       name: 'ChatGPT Plus',
       price: 2800,
       description: 'Access to GPT-4, Faster response, Priority access.',
       icon: '🤖',
       category: 'AI',
-    },
+      stock: 20,
+      active: true,
+      },
   ]
 })
 
